@@ -24,6 +24,8 @@ class Accounts:
     def create_pin(self):
         pin_id = random.randrange(0000,9999)
         self.pin = f'{pin_id:04d}'
+
+
 def gen_customer_id():
     return f'{random.randrange(000000000, 999999999):09d}'
 
@@ -39,20 +41,20 @@ def check_login(card, pin):
             res = True
     return res
 
-def account_operations(account_id):
-    # while True:
-    operation = int(input('''
-    1. Balance
-    2. Log out
-    0. Exit
-    '''))
-    if operation == 0:
-        print('Bye!')
-        # break
-    elif operation == 1:
-        print(f'Balance: {Accounts.all_accounts[account_id].balance}')
-    # elif operation == 2:
-    #     break
+# def account_operations(account_id):
+#     # while True:
+#     operation = int(input('''
+#     1. Balance
+#     2. Log out
+#     0. Exit
+#     '''))
+#     if operation == 0:
+#         print('Bye!')
+#         # break
+#     elif operation == 1:
+#         print(f'Balance: {Accounts.all_accounts[account_id].balance}')
+#     # elif operation == 2:
+#     #     break
 
 
 def account_login():
@@ -60,9 +62,10 @@ def account_login():
     card_id = input('Enter your card number:')
     pin_id = input('Enter your PIN:')
     if check_login(card_id, pin_id):
-        account_operations(card_id[6:])
+        return Accounts.all_accounts[card_id[6:]]
     else:
         print('Wrong card number or PIN!')
+        return None
 
 def create_card():
     """
@@ -78,20 +81,33 @@ def create_card():
     print(new_account.pin)
 # Main system prompt
 
-
-
-
+logged_in = False
+account_id = None
+prompts = ['Exit', 'Create an account', 'Log into account']
 
 while True:
-    choice = int(input('''
-    1. Create an account
-    2. Log into account
-    0. Exit
-    '''))
+    if logged_in:
+        prompts[1] = 'Balance'
+        prompts[2] = 'Log out'
+    else:
+        prompts[1] = 'Create an account'
+        prompts[2] = 'Log into account'
+    print(f'1. {prompts[1]}')
+    print(f'2. {prompts[2]}')
+    print(f'0. {prompts[0]}')
+    choice = int(input())
     if choice == 0:
         print('Bye!')
         break
     elif choice == 1:
-        create_card()
+        if logged_in and account_id:
+            print(f'Balance: {account_id.balance}')
+        else:
+            create_card()
     elif choice == 2:
-        account_login()
+        if logged_in and account_id:
+            account_id = None
+            logged_in = False
+        else:
+            account_id = account_login()
+            logged_in = True if account_id else False
