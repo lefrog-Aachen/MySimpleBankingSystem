@@ -14,7 +14,7 @@ class Accounts:
         self.balance = 0
         Accounts.all_accounts[customer] = self
 
-     def create_account(self) -> str:
+    def create_account(self) -> str:
         # checksum = 5
         customer_id = gen_customer_id()
         customer_id += luhn_check(Accounts.IIN + customer_id)
@@ -71,18 +71,28 @@ def account_login():
         print('Wrong card number or PIN!')
         return None
 
-def create_card():
+def create_card(connector):
     """
     Account creation. Create the new object and
     adds it to the dictionary with key as the customer number
     prints card # and pin
+    It also records all in the cards database for which connector is
+    supplied.
     """
     new_account = Accounts()
+    number = new_account.card_number
+    id = number[6:-1]
+    pin = new_account.pin
     print('Your card has been created')
     print('Your card number:')
     print(new_account.card_number)
     print('Your card PIN: ')
     print(new_account.pin)
+    cursor = connector.cursor()
+    command = f'INSERT INTO card (id, number, pin) VALUES ("{id}", "{number}", "{pin}")'
+    # print(command)
+    cursor.execute(command)
+    connector.commit()
 
 #Program start here
 
@@ -98,10 +108,6 @@ CREATE TABLE IF NOT EXISTS card (
     )
 ''')
 conn.commit()
-cur.execute('''
-SELECT * from card;
-            ''')
-cur.fetchall()
 # Main system prompt
 
 logged_in = False
@@ -121,12 +127,13 @@ while True:
     choice = int(input())
     if choice == 0:
         print('Bye!')
+        conn.close()
         break
     elif choice == 1:
         if logged_in and account_id:
             print(f'Balance: {account_id.balance}')
         else:
-            create_card()
+            create_card(conn)
     elif choice == 2:
         if logged_in and account_id:
             account_id = None
