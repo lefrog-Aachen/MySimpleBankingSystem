@@ -1,4 +1,6 @@
 import random
+import sqlite3
+
 
 class Accounts:
     all_accounts = {}
@@ -12,12 +14,16 @@ class Accounts:
         self.balance = 0
         Accounts.all_accounts[customer] = self
 
-    def create_account(self) -> str:
-        checksum = 5
-        customer_id = gen_customer_id()+str(checksum)
+     def create_account(self) -> str:
+        # checksum = 5
+        customer_id = gen_customer_id()
+        customer_id += luhn_check(Accounts.IIN + customer_id)
+
         while customer_id in Accounts.all_accounts:
-            checksum = 9
-            customer_id = gen_customer_id()+str(checksum)
+            # checksum = 9
+            # customer_id = gen_customer_id()+str(checksum)
+            customer_id = gen_customer_id()
+            customer_id += luhn_check(Accounts.IIN + customer_id)
         self.card_number = f'{Accounts.IIN}{customer_id}'
         return str(customer_id)
 
@@ -28,6 +34,20 @@ class Accounts:
 
 def gen_customer_id():
     return f'{random.randrange(000000000, 999999999):09d}'
+
+def luhn_check(raw_number):
+    digits = [int(x) for x in raw_number]
+    for i in range(len(digits)):
+        digit = digits[i]
+        if i % 2 == 0:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        digits[i] = digit
+
+    checksum = (10 - sum(digits) % 10) %10
+    return str(checksum)
+
 
 def check_login(card, pin):
     res = False
@@ -40,22 +60,6 @@ def check_login(card, pin):
             print('You have successfully logged in!')
             res = True
     return res
-
-# def account_operations(account_id):
-#     # while True:
-#     operation = int(input('''
-#     1. Balance
-#     2. Log out
-#     0. Exit
-#     '''))
-#     if operation == 0:
-#         print('Bye!')
-#         # break
-#     elif operation == 1:
-#         print(f'Balance: {Accounts.all_accounts[account_id].balance}')
-#     # elif operation == 2:
-#     #     break
-
 
 def account_login():
     # login into account
@@ -79,6 +83,25 @@ def create_card():
     print(new_account.card_number)
     print('Your card PIN: ')
     print(new_account.pin)
+
+#Program start here
+
+# Database creation
+conn = sqlite3.connect('card.s3db')
+cur = conn.cursor()
+cur.execute('''
+CREATE TABLE IF NOT EXISTS card (
+    id INTEGER PRIMARY KEY,
+    number TEXT,
+    pin TEXT,
+    balance INTEGER DEFAULT 0
+    )
+''')
+conn.commit()
+cur.execute('''
+SELECT * from card;
+            ''')
+cur.fetchall()
 # Main system prompt
 
 logged_in = False
